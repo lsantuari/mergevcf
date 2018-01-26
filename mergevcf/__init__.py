@@ -1,7 +1,9 @@
-import mergevcf.mergedfile as mergedfile
 import argparse
 import os
 import sys
+
+import mergevcf.mergedfile as mergedfile
+
 
 def main():
     """Merge VCF files, output to stdout or file"""
@@ -9,7 +11,9 @@ def main():
 
     parser = argparse.ArgumentParser(description='Merge calls in VCF files')
     parser.add_argument('input_files', nargs='+', help='Input VCF files')
-    parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Specify output file (default:stdout)") 
+    parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout,
+                        help="Specify output file (default:stdout)")
+    parser.add_argument('-o2', '--output2', type=argparse.FileType('w'), help="Specify second output file ")
     parser.add_argument('-v', '--verbose', action='store_true', help="Specify verbose output")
     parser.add_argument('-l', '--labels', type=str, help='Comma-separated labels for each input VCF file (default:basenames)')
     parser.add_argument('-n', '--ncallers', action='store_true', help='Annotate variant with number of callers')
@@ -26,7 +30,7 @@ def main():
     else:
         labels = [label.strip() for label in args.labels.split(',')]
 
-    mergedfile.merge(input_files, labels, args.sv, args.output,
+    mergedfile.merge(input_files, labels, args.sv, args.output, args.output2,
                      slop=args.svwindow, verbose=args.verbose,
                      output_ncallers=args.ncallers,
                      min_num_callers=args.mincallers,

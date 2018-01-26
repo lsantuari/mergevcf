@@ -1,5 +1,7 @@
 import vcf
+
 import mergevcf.variantdict as variantdict
+
 
 def mapped_to_chromosome(chrom):
     """
@@ -67,9 +69,9 @@ def bkptRefAltFromPair(loc1, loc2, refstr="N"):
     return refstr, altstr
 
 
-def merge(filenames, programs, forceSV, outfile, slop=0, verbose=True,
-        output_ncallers=False, min_num_callers=0,
-        filterByChromosome=True, noFilter=False):
+def merge(filenames, programs, forceSV, outfile, out2file, slop=0, verbose=True,
+          output_ncallers=False, min_num_callers=0,
+          filterByChromosome=True, noFilter=False):
     """Merge several VCFs from different programs into a new VCF file."""
 
     # Returns true if the variant is PASS in the VCF file
@@ -109,7 +111,7 @@ def merge(filenames, programs, forceSV, outfile, slop=0, verbose=True,
 
                 if verbose:
                     if count == 0:
-                        print record, program
+                        print (record, program)
                     count += 1
                     if count == 100:
                         count = 0
@@ -125,6 +127,13 @@ def merge(filenames, programs, forceSV, outfile, slop=0, verbose=True,
         outfile.write('##INFO=<ID=NumCallers,Number=1,Type=Integer,Description="Number of callers that made this call">\n')
     if min_num_callers > 0:
         outfile.write('##FILTER=<ID=LOWSUPPORT,Description="Not called by enough callers in ensemble">\n')
+
+    # Added code
+    outfile.write('##INFO=<ID=END,Number=.,Type=Integer,Description="End of SV">\n')
+    outfile.write('##INFO=<ID=SVTYPE,Number=.,Type=String,Description="Type of SV">\n')
+    outfile.write('##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="Length of SV">\n')
+    # End of added code
+
     outfile.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
     for variant in calldict:
@@ -155,12 +164,14 @@ def merge(filenames, programs, forceSV, outfile, slop=0, verbose=True,
             avgloc1 = loc1.withPos(medianPos1)
             avgloc2 = loc2.withPos(medianPos2)
             ref, alt = bkptRefAltFromPair(avgloc1, avgloc2)
-            vcfline = "\t".join([avgloc1.__chrom__, str(avgloc1.__pos__), '.',
+            bkptId = ''.join([avgloc1.__chrom__ + ":" + str(avgloc1.__pos__), "_", alt])
+            vcfline = '\t'.join([avgloc1.__chrom__, str(avgloc1.__pos__), bkptId,
                 ref, alt, '.', filterstring,
                 infoString(callers, make_info_dict(records, medianPos1, medianPos2))])
             outfile.write(vcfline + "\n")
             for caller, rec in recordscalled:
-                outfile.write("#"+str(rec)+" ("+caller+")\n")
+                # outfile.write("#"+str(rec)+" ("+caller+")\n")
+                out2file.write("\t".join([bkptId, str(rec), caller + "\n"]))
 
     outfile.close()
 
